@@ -1,0 +1,388 @@
+<section class="page registros-page" id="registros" data-guideia="registro-feature">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Workspace de registros</p>
+      <h1>Centro operativo de altas, backlog y archivado</h1>
+      <p>
+        Esta pantalla ya no es solo un formulario y una tabla: tiene segmentos de cola, filtros
+        cruzados, ficha lateral y campos avanzados que obligan a la guia a entender mejor el
+        contexto.
+      </p>
+    </div>
+    <div class="stats">
+      <article>
+        <span>Total</span>
+        <strong>{{ registroStats().total }}</strong>
+      </article>
+      <article>
+        <span>Activos</span>
+        <strong>{{ registroStats().activos }}</strong>
+      </article>
+      <article>
+        <span>Pendientes</span>
+        <strong>{{ registroStats().pendientes }}</strong>
+      </article>
+      <article>
+        <span>Integraciones</span>
+        <strong>{{ registroStats().integraciones }}</strong>
+      </article>
+      <article>
+        <span>Criticos</span>
+        <strong>{{ registroStats().criticos }}</strong>
+      </article>
+    </div>
+  </header>
+
+  <section class="switcher" data-guideia="registros-switcher">
+    <button
+      *ngFor="let vista of vistas"
+      type="button"
+      [class.active]="activeVista === vista"
+      (click)="setVista(vista)"
+      [attr.data-guideia]="'registros-tab-' + vista.toLowerCase()"
+    >
+      <span>{{ vista }}</span>
+      <strong>{{ vistaCounters()[vista] }}</strong>
+    </button>
+  </section>
+
+  <section class="workspace-grid">
+    <article class="card form-card">
+      <div class="form-header">
+        <div>
+          <p class="section-label">Formulario operativo</p>
+          <h2>{{ editingId === null ? 'Nuevo registro' : 'Editar registro #' + editingId }}</h2>
+        </div>
+        <button
+          type="button"
+          class="new-button"
+          (click)="createNewRegistro()"
+          data-guideia="registro-nuevo"
+        >
+          Nuevo registro
+        </button>
+      </div>
+
+      <form
+        (ngSubmit)="submitRegistro()"
+        class="registro-form"
+        data-guideia="form-registro"
+        data-guideia-visible="true"
+        [attr.data-guideia-mode]="editingId === null ? 'create' : 'edit'"
+      >
+        <div class="form-section" data-guideia="registro-bloque-basico">
+          <h3>Identificacion</h3>
+
+          <label for="registro-codigo">Codigo</label>
+          <input
+            id="registro-codigo"
+            type="text"
+            name="codigo"
+            [(ngModel)]="formCodigo"
+            data-guideia="registro-codigo-input"
+            placeholder="Ej. REG-188"
+            required
+          />
+
+          <label for="registro-nombre">Nombre</label>
+          <input
+            id="registro-nombre"
+            type="text"
+            name="nombre"
+            [(ngModel)]="formNombre"
+            data-guideia="registro-nombre-input"
+            placeholder="Ej. Alta de partner premium"
+            required
+          />
+
+          <label for="registro-resumen">Resumen</label>
+          <textarea
+            id="registro-resumen"
+            name="resumen"
+            [(ngModel)]="formResumen"
+            data-guideia="registro-resumen-input"
+            placeholder="Describe el objetivo operativo en una frase"
+            rows="3"
+            required
+          ></textarea>
+        </div>
+
+        <div class="form-section" data-guideia="registro-bloque-clasificacion">
+          <h3>Clasificacion y SLA</h3>
+
+          <div class="field-grid">
+            <div>
+              <label for="registro-estado">Estado</label>
+              <select
+                id="registro-estado"
+                name="estado"
+                [(ngModel)]="formEstado"
+                data-guideia="registro-estado-select"
+              >
+                <option *ngFor="let estado of estadoOptions" [value]="estado">{{ estado }}</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="registro-prioridad">Prioridad</label>
+              <select
+                id="registro-prioridad"
+                name="prioridad"
+                [(ngModel)]="formPrioridad"
+                data-guideia="registro-prioridad-select"
+              >
+                <option *ngFor="let prioridad of prioridadOptions" [value]="prioridad">
+                  {{ prioridad }}
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <label for="registro-canal">Canal</label>
+              <select
+                id="registro-canal"
+                name="canal"
+                [(ngModel)]="formCanal"
+                data-guideia="registro-canal-select"
+              >
+                <option *ngFor="let canal of canalOptions" [value]="canal">{{ canal }}</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="registro-origen">Origen</label>
+              <select
+                id="registro-origen"
+                name="origen"
+                [(ngModel)]="formOrigen"
+                data-guideia="registro-origen-select"
+              >
+                <option *ngFor="let origen of origenOptions" [value]="origen">{{ origen }}</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="registro-sla">SLA</label>
+              <select
+                id="registro-sla"
+                name="sla"
+                [(ngModel)]="formSla"
+                data-guideia="registro-sla-select"
+              >
+                <option *ngFor="let sla of slaOptions" [value]="sla">{{ sla }}</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="registro-fecha">Fecha limite</label>
+              <input
+                id="registro-fecha"
+                type="date"
+                name="fechaLimite"
+                [(ngModel)]="formFechaLimite"
+                data-guideia="registro-fecha-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section" data-guideia="registro-bloque-responsable">
+          <h3>Responsable y metadatos</h3>
+
+          <label for="registro-propietario">Propietario</label>
+          <input
+            id="registro-propietario"
+            type="text"
+            name="propietario"
+            [(ngModel)]="formPropietario"
+            placeholder="Ej. Operaciones"
+            data-guideia="registro-propietario-input"
+            required
+          />
+
+          <label for="registro-etiquetas">Etiquetas</label>
+          <input
+            id="registro-etiquetas"
+            type="text"
+            name="etiquetas"
+            [(ngModel)]="formEtiquetas"
+            placeholder="Ej. partner, legal, onboarding"
+            data-guideia="registro-etiquetas-input"
+          />
+        </div>
+
+        <div class="form-actions" data-guideia="registro-actions">
+          <button type="submit" class="primary" data-guideia="registro-guardar">
+            {{ editingId === null ? 'Anadir registro' : 'Actualizar registro' }}
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            (click)="cancelEdit()"
+            data-guideia="registro-cancelar"
+            [disabled]="editingId === null"
+          >
+            Cancelar edicion
+          </button>
+        </div>
+      </form>
+    </article>
+
+    <article class="card list-card">
+      <div class="panel-head">
+        <div>
+          <p class="section-label">Cola visible</p>
+          <h2>{{ activeVista }}</h2>
+        </div>
+        <span class="badge muted">{{ visibleRegistros.length }} resultados</span>
+      </div>
+
+      <div class="toolbar">
+        <input
+          type="search"
+          [(ngModel)]="searchTerm"
+          placeholder="Buscar por codigo, nombre, resumen, etiquetas o responsable"
+          data-guideia="registro-buscador"
+        />
+        <select [(ngModel)]="filterEstado">
+          <option value="Todos">Todos los estados</option>
+          <option *ngFor="let estado of estadoOptions" [value]="estado">{{ estado }}</option>
+        </select>
+        <select [(ngModel)]="filterPrioridad">
+          <option value="Todas">Todas las prioridades</option>
+          <option *ngFor="let prioridad of prioridadOptions" [value]="prioridad">
+            {{ prioridad }}
+          </option>
+        </select>
+        <select [(ngModel)]="filterCanal">
+          <option value="Todos">Todos los canales</option>
+          <option *ngFor="let canal of canalOptions" [value]="canal">{{ canal }}</option>
+        </select>
+        <select [(ngModel)]="filterOrigen">
+          <option value="Todos">Todos los origenes</option>
+          <option *ngFor="let origen of origenOptions" [value]="origen">{{ origen }}</option>
+        </select>
+      </div>
+
+      <div class="table-wrap" data-guideia="tabla-registros">
+        <table>
+          <thead>
+            <tr>
+              <th><button type="button" (click)="setSort('codigo')">Codigo</button></th>
+              <th><button type="button" (click)="setSort('nombre')">Nombre</button></th>
+              <th><button type="button" (click)="setSort('estado')">Estado</button></th>
+              <th><button type="button" (click)="setSort('prioridad')">Prioridad</button></th>
+              <th>Canal</th>
+              <th>Origen</th>
+              <th><button type="button" (click)="setSort('fechaLimite')">Deadline</button></th>
+              <th>Etiquetas</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let registro of visibleRegistros; trackBy: trackByRegistroId"
+              [class.selected]="selectedRegistro?.id === registro.id"
+              (click)="selectRegistro(registro)"
+              [attr.data-guideia]="'fila-registro-' + registro.id"
+            >
+              <td>{{ registro.codigo }}</td>
+              <td>
+                <strong>{{ registro.nombre }}</strong>
+                <small>{{ registro.propietario }}</small>
+              </td>
+              <td>
+                <span class="badge estado" [attr.data-estado]="registro.estado">{{ registro.estado }}</span>
+              </td>
+              <td>
+                <span class="badge prioridad" [attr.data-prioridad]="registro.prioridad">
+                  {{ registro.prioridad }}
+                </span>
+              </td>
+              <td>{{ registro.canal }}</td>
+              <td>{{ registro.origen }}</td>
+              <td>{{ registro.fechaLimite }}</td>
+              <td class="tags">
+                <span *ngFor="let tag of registro.etiquetas">{{ tag }}</span>
+              </td>
+              <td class="row-actions" (click)="$event.stopPropagation()">
+                <button
+                  type="button"
+                  class="edit"
+                  (click)="editRegistro(registro)"
+                  [attr.data-guideia]="'registro-editar-' + registro.id"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="delete"
+                  (click)="deleteRegistro(registro.id)"
+                  [attr.data-guideia]="'registro-borrar-' + registro.id"
+                >
+                  Borrar
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="visibleRegistros.length === 0" data-guideia="tabla-vacia">
+              <td colspan="9">No hay resultados para la vista y filtros seleccionados.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="card inspector-card" data-guideia="registro-inspector">
+      <div *ngIf="selectedRegistro as registro; else emptyInspector" class="inspector-shell">
+        <div class="panel-head">
+          <div>
+            <p class="section-label">Ficha lateral</p>
+            <h2>{{ registro.nombre }}</h2>
+          </div>
+          <span class="badge muted">{{ registro.codigo }}</span>
+        </div>
+
+        <p class="inspector-copy">{{ registro.resumen }}</p>
+
+        <div class="meta-grid">
+          <article>
+            <span>SLA</span>
+            <strong>{{ registro.sla }}</strong>
+          </article>
+          <article>
+            <span>Canal</span>
+            <strong>{{ registro.canal }}</strong>
+          </article>
+          <article>
+            <span>Checklist</span>
+            <strong>{{ registro.checklist }} items</strong>
+          </article>
+          <article>
+            <span>Comentarios</span>
+            <strong>{{ registro.comentarios }}</strong>
+          </article>
+        </div>
+
+        <div class="tag-cloud">
+          <span *ngFor="let tag of registro.etiquetas">{{ tag }}</span>
+        </div>
+
+        <div class="trail">
+          <h3>Ultimas trazas del modulo</h3>
+          <div class="trail-item" *ngFor="let item of registroTrail()">
+            <strong>{{ item.accion }}</strong>
+            <small>{{ item.fecha }} · {{ item.actor }}</small>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #emptyInspector>
+        <div class="empty-state">
+          <p class="section-label">Ficha lateral</p>
+          <h2>Selecciona un registro</h2>
+          <p>La vista lateral mostrara metadatos, trazas y el resumen del item activo.</p>
+        </div>
+      </ng-template>
+    </article>
+  </section>
+</section>

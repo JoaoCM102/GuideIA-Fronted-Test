@@ -1,0 +1,181 @@
+<section class="page reportes-page" id="reportes" data-guideia="reportes-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Analitica operacional</p>
+      <h1>Radar de reportes con pipeline, owners y control de riesgo</h1>
+      <p>
+        La pantalla de reportes ahora mezcla filtros, tarjetas de radar, una tabla editable y una
+        ficha lateral. Es una buena prueba para medir si la guia sigue tomando el camino correcto.
+      </p>
+    </div>
+    <div class="stats">
+      <article>
+        <span>Total reportes</span>
+        <strong>{{ reporteStats().total }}</strong>
+      </article>
+      <article>
+        <span>Promedio avance</span>
+        <strong>{{ reporteStats().progresoPromedio }}%</strong>
+      </article>
+      <article>
+        <span>En riesgo</span>
+        <strong>{{ reporteStats().enRiesgo }}</strong>
+      </article>
+      <article>
+        <span>Bajo 50%</span>
+        <strong>{{ reporteStats().vencidos }}</strong>
+      </article>
+    </div>
+  </header>
+
+  <section class="switcher" data-guideia="reportes-switcher">
+    <button
+      *ngFor="let board of boards"
+      type="button"
+      [class.active]="activeBoard === board"
+      (click)="setBoard(board)"
+      [attr.data-guideia]="'reportes-tab-' + board.toLowerCase()"
+    >
+      {{ board }}
+    </button>
+  </section>
+
+  <section class="toolbar" data-guideia="reportes-toolbar">
+    <select [(ngModel)]="filterTipo" data-guideia="reportes-tipo-select">
+      <option *ngFor="let item of tipoOptions" [value]="item">{{ item }}</option>
+    </select>
+    <select [(ngModel)]="filterEstado" data-guideia="reportes-estado-select">
+      <option *ngFor="let item of estadoOptions" [value]="item">{{ item }}</option>
+    </select>
+    <select [(ngModel)]="filterRiesgo" data-guideia="reportes-riesgo-select">
+      <option *ngFor="let item of riesgoOptions" [value]="item">{{ item }}</option>
+    </select>
+  </section>
+
+  <section class="content-grid">
+    <article class="card radar-card" data-guideia="reportes-radar-panel">
+      <div class="panel-head">
+        <div>
+          <p class="section-label">Vista {{ activeBoard }}</p>
+          <h2>Reportes filtrados</h2>
+        </div>
+        <span class="badge muted">{{ visibleReportes.length }} items</span>
+      </div>
+
+      <div class="radar-grid">
+        <article
+          class="report-card"
+          *ngFor="let reporte of visibleReportes; trackBy: trackByReporteId"
+          [class.selected]="selectedReporte?.id === reporte.id"
+          (click)="selectReporte(reporte)"
+        >
+          <div class="report-head">
+            <span class="pill" [attr.data-risk]="reporte.riesgo">{{ reporte.riesgo }}</span>
+            <span class="pill muted">{{ reporte.tipo }}</span>
+          </div>
+          <strong>{{ reporte.nombre }}</strong>
+          <p>{{ reporte.ownerTeam }} · {{ reporte.responsable }}</p>
+          <div class="progress">
+            <span class="progress-bar" [style.width.%]="reporte.progreso"></span>
+          </div>
+          <div class="report-foot">
+            <small>{{ reporte.progreso }}%</small>
+            <small>{{ reporte.alertas }} alertas</small>
+          </div>
+        </article>
+      </div>
+    </article>
+
+    <article class="card table-card">
+      <div class="panel-head">
+        <div>
+          <p class="section-label">Tabla de control</p>
+          <h2>Pipeline editable</h2>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Reporte</th>
+              <th>Estado</th>
+              <th>Riesgo</th>
+              <th>Responsable</th>
+              <th>Revision</th>
+              <th>Progreso</th>
+              <th>Ajustar</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let reporte of visibleReportes; trackBy: trackByReporteId"
+              [class.selected]="selectedReporte?.id === reporte.id"
+              (click)="selectReporte(reporte)"
+              [attr.data-guideia]="'fila-reporte-' + reporte.id"
+            >
+              <td>#{{ reporte.id }}</td>
+              <td>
+                <strong>{{ reporte.nombre }}</strong>
+                <small>{{ reporte.tipo }} · {{ reporte.ownerTeam }}</small>
+              </td>
+              <td>{{ reporte.estado }}</td>
+              <td><span class="pill" [attr.data-risk]="reporte.riesgo">{{ reporte.riesgo }}</span></td>
+              <td>{{ reporte.responsable }}</td>
+              <td>{{ reporte.proximaRevision }}</td>
+              <td>
+                <div class="progress compact">
+                  <span class="progress-bar" [style.width.%]="reporte.progreso"></span>
+                </div>
+                <small>{{ reporte.progreso }}%</small>
+              </td>
+              <td class="actions" (click)="$event.stopPropagation()">
+                <button type="button" (click)="bumpProgress(reporte, 5)">+5%</button>
+                <button type="button" (click)="bumpProgress(reporte, -5)">-5%</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <aside class="card side-card" data-guideia="reportes-side-panel">
+      <div *ngIf="selectedReporte as reporte; else emptyState" class="detail-shell">
+        <p class="section-label">Ficha analitica</p>
+        <h2>{{ reporte.nombre }}</h2>
+        <p class="muted">{{ reporte.responsable }} · {{ reporte.ownerTeam }}</p>
+
+        <div class="detail-grid">
+          <article>
+            <span>Estado</span>
+            <strong>{{ reporte.estado }}</strong>
+          </article>
+          <article>
+            <span>Riesgo</span>
+            <strong>{{ reporte.riesgo }}</strong>
+          </article>
+          <article>
+            <span>Alertas</span>
+            <strong>{{ reporte.alertas }}</strong>
+          </article>
+          <article>
+            <span>Proxima revision</span>
+            <strong>{{ reporte.proximaRevision }}</strong>
+          </article>
+        </div>
+
+        <div class="detail-actions">
+          <button type="button" (click)="bumpProgress(reporte, 10)">Acelerar +10%</button>
+          <button type="button" (click)="bumpProgress(reporte, -10)">Replanificar -10%</button>
+        </div>
+      </div>
+
+      <ng-template #emptyState>
+        <p class="section-label">Ficha analitica</p>
+        <h2>Selecciona un reporte</h2>
+        <p class="muted">La ficha lateral mostrara riesgo, revision y acciones de ajuste.</p>
+      </ng-template>
+    </aside>
+  </section>
+</section>

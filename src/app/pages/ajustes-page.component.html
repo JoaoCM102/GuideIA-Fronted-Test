@@ -1,0 +1,412 @@
+<section class="page ajustes-page" id="ajustes" data-guideia="servicios-feature">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Centro de gobierno</p>
+      <h1>Integraciones, politicas y auditoria</h1>
+      <p>
+        Este modulo ya no es un simple formulario: combina configuracion global, cola de
+        integraciones, reglas operativas y bitacora filtrable en un mismo workspace.
+      </p>
+    </div>
+
+    <div class="stats-grid">
+      <article class="stat-card">
+        <span>Integraciones activas</span>
+        <strong>{{ integrationStats().activas }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Con error</span>
+        <strong>{{ integrationStats().error }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Reglas activas</span>
+        <strong>{{ enabledRulesCount }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Eventos recientes</span>
+        <strong>{{ auditoria().length }}</strong>
+      </article>
+    </div>
+  </header>
+
+  <section class="switcher" data-guideia="ajustes-switcher">
+    <button
+      *ngFor="let vista of vistas"
+      type="button"
+      [class.active]="activeVista === vista"
+      (click)="setVista(vista)"
+      [attr.data-guideia]="'ajustes-tab-' + vista.toLowerCase()"
+    >
+      {{ vista }}
+    </button>
+  </section>
+
+  <section class="workspace-grid">
+    <div class="column stack-column">
+      <article class="card settings-card">
+        <div class="panel-head">
+          <div>
+            <p class="section-label">Configuracion base</p>
+            <h2>Motor GuideIA</h2>
+          </div>
+          <span class="badge positive">Core activo</span>
+        </div>
+
+        <form class="settings-form" (ngSubmit)="saveSettings()" data-guideia="ajustes-config-form">
+          <label>
+            Endpoint IA
+            <input
+              type="text"
+              [(ngModel)]="endpoint"
+              name="endpoint"
+              data-guideia="ajustes-endpoint-input"
+            />
+          </label>
+
+          <label>
+            Modelo activo
+            <input
+              type="text"
+              [(ngModel)]="modeloActivo"
+              name="modeloActivo"
+              data-guideia="ajustes-modelo-input"
+            />
+          </label>
+
+          <div class="inline-grid">
+            <label>
+              Max contexto
+              <input
+                type="number"
+                [(ngModel)]="maxContexto"
+                name="maxContexto"
+                min="2000"
+                step="500"
+                data-guideia="ajustes-contexto-input"
+              />
+            </label>
+
+            <label>
+              Retries
+              <input
+                type="number"
+                [(ngModel)]="retries"
+                name="retries"
+                min="0"
+                max="5"
+                data-guideia="ajustes-retries-input"
+              />
+            </label>
+          </div>
+
+          <label class="toggle-row">
+            <input
+              type="checkbox"
+              [(ngModel)]="streaming"
+              name="streaming"
+              data-guideia="ajustes-streaming-toggle"
+            />
+            Streaming habilitado
+          </label>
+
+          <label class="toggle-row">
+            <input
+              type="checkbox"
+              [(ngModel)]="modoGuiado"
+              name="modoGuiado"
+              data-guideia="ajustes-modo-guiado-toggle"
+            />
+            Guiado paso a paso
+          </label>
+
+          <button type="submit" class="primary" data-guideia="ajustes-guardar">
+            Guardar ajustes
+          </button>
+        </form>
+      </article>
+
+      <article class="card integration-form-card">
+        <div class="panel-head">
+          <div>
+            <p class="section-label">Alta de conector</p>
+            <h2>Nueva integracion</h2>
+          </div>
+          <span class="badge neutral">Manual</span>
+        </div>
+
+        <form class="integration-form" (ngSubmit)="submitIntegration()" data-guideia="integracion-form">
+          <input
+            [(ngModel)]="formNombre"
+            name="formNombre"
+            placeholder="Nombre de la integracion"
+            data-guideia="integracion-nombre-input"
+          />
+          <select [(ngModel)]="formTipo" name="formTipo" data-guideia="integracion-tipo-select">
+            <option *ngFor="let item of integrationTypeOptions" [value]="item">{{ item }}</option>
+          </select>
+          <select [(ngModel)]="formEstado" name="formEstado" data-guideia="integracion-estado-select">
+            <option *ngFor="let item of integrationStateOptions" [value]="item">{{ item }}</option>
+          </select>
+          <input
+            [(ngModel)]="formEndpoint"
+            name="formEndpoint"
+            placeholder="Endpoint / URL / DSN"
+            data-guideia="integracion-endpoint-input"
+          />
+          <div class="inline-grid">
+            <input
+              type="number"
+              [(ngModel)]="formRateLimit"
+              name="formRateLimit"
+              min="5"
+              step="5"
+              placeholder="Rate limit"
+              data-guideia="integracion-rate-limit-input"
+            />
+            <input
+              [(ngModel)]="formPropietario"
+              name="formPropietario"
+              placeholder="Propietario"
+              data-guideia="integracion-propietario-input"
+            />
+          </div>
+          <button type="submit" class="primary" data-guideia="integracion-guardar">
+            Crear integracion
+          </button>
+        </form>
+      </article>
+    </div>
+
+    <div class="column main-column">
+      <ng-container [ngSwitch]="activeVista">
+        <article *ngSwitchCase="'Integraciones'" class="card" data-guideia="integraciones-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-label">Malla de conectores</p>
+              <h2>Integraciones configuradas</h2>
+            </div>
+            <span class="badge muted">{{ integraciones().length }} items</span>
+          </div>
+
+          <div class="table-wrap" data-guideia="tabla-integraciones">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Tipo</th>
+                  <th>Estado</th>
+                  <th>Rate limit</th>
+                  <th>Owner</th>
+                  <th>Ultima sync</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let item of integraciones(); trackBy: trackByIntegrationId"
+                  [attr.data-guideia]="'fila-integracion-' + item.id"
+                  [class.selected]="selectedIntegration?.id === item.id"
+                >
+                  <td>#{{ item.id }}</td>
+                  <td>
+                    <button class="row-link" type="button" (click)="selectIntegration(item)">
+                      {{ item.nombre }}
+                    </button>
+                  </td>
+                  <td>{{ item.tipo }}</td>
+                  <td>
+                    <span class="badge" [attr.data-estado]="item.estado">{{ item.estado }}</span>
+                  </td>
+                  <td>{{ item.rateLimit }}/min</td>
+                  <td>{{ item.propietario }}</td>
+                  <td>{{ item.ultimaSync }}</td>
+                  <td>
+                    <button type="button" class="ghost" (click)="cycleIntegration(item.id)">
+                      Ciclar estado
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article *ngSwitchCase="'Politicas'" class="card" data-guideia="ajustes-reglas-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-label">Reglas activas</p>
+              <h2>Politicas operativas</h2>
+            </div>
+            <span class="badge muted">{{ reglas().length }} reglas</span>
+          </div>
+
+          <div class="rules-stack">
+            <article
+              *ngFor="let rule of reglas(); trackBy: trackByRuleId"
+              class="rule-card"
+              [attr.data-guideia]="'fila-regla-' + rule.id"
+            >
+              <div class="rule-head">
+                <div>
+                  <strong>{{ rule.nombre }}</strong>
+                  <p>{{ rule.descripcion }}</p>
+                </div>
+                <button type="button" class="ghost" (click)="toggleRule(rule)">
+                  {{ rule.enabled ? 'Desactivar' : 'Activar' }}
+                </button>
+              </div>
+
+              <div class="rule-meta">
+                <span class="badge" [attr.data-severidad]="rule.severidad">{{ rule.severidad }}</span>
+                <small>{{ rule.scope }}</small>
+                <small>Umbral {{ rule.threshold }}</small>
+              </div>
+
+              <label class="threshold-row">
+                Ajustar umbral
+                <input
+                  type="range"
+                  min="1"
+                  max="100"
+                  [value]="rule.threshold"
+                  (input)="updateRuleThreshold(rule, $event)"
+                  [attr.data-guideia]="'regla-threshold-input-' + rule.id"
+                />
+              </label>
+            </article>
+          </div>
+        </article>
+
+        <article *ngSwitchCase="'Auditoria'" class="card" data-guideia="ajustes-auditoria-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-label">Bitacora en vivo</p>
+              <h2>Auditoria filtrable</h2>
+            </div>
+            <span class="badge muted">{{ visibleAudit.length }} eventos</span>
+          </div>
+
+          <div class="audit-toolbar" data-guideia="auditoria-filtros">
+            <select [(ngModel)]="filterSeveridad" name="filterSeveridad" data-guideia="auditoria-severidad-filtro">
+              <option value="Todas">Todas las severidades</option>
+              <option *ngFor="let item of severidadOptions" [value]="item">{{ item }}</option>
+            </select>
+            <input
+              [(ngModel)]="filterModulo"
+              name="filterModulo"
+              placeholder="Filtrar por modulo"
+              data-guideia="auditoria-modulo-filtro"
+            />
+          </div>
+
+          <form class="event-form" (ngSubmit)="addManualEvent()" data-guideia="auditoria-form">
+            <input [(ngModel)]="actor" name="actor" placeholder="Actor" data-guideia="auditoria-actor-input" />
+            <input [(ngModel)]="modulo" name="modulo" placeholder="Modulo" data-guideia="auditoria-modulo-input" />
+            <select [(ngModel)]="severidad" name="severidad" data-guideia="auditoria-severidad-select">
+              <option *ngFor="let item of severidadOptions" [value]="item">{{ item }}</option>
+            </select>
+            <textarea
+              [(ngModel)]="accion"
+              name="accion"
+              rows="3"
+              placeholder="Describe la accion para la bitacora..."
+              data-guideia="auditoria-accion-input"
+            ></textarea>
+            <button type="submit" class="primary" data-guideia="auditoria-guardar">Anadir evento</button>
+          </form>
+
+          <div class="table-wrap" data-guideia="tabla-auditoria">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Fecha</th>
+                  <th>Actor</th>
+                  <th>Modulo</th>
+                  <th>Accion</th>
+                  <th>Severidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of visibleAudit">
+                  <td>#{{ item.id }}</td>
+                  <td>{{ item.fecha }}</td>
+                  <td>{{ item.actor }}</td>
+                  <td>{{ item.modulo }}</td>
+                  <td>{{ item.accion }}</td>
+                  <td>
+                    <span class="badge" [attr.data-severidad]="item.severidad">{{ item.severidad }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </ng-container>
+    </div>
+
+    <aside class="column side-column">
+      <article class="card side-card" data-guideia="ajustes-side-panel">
+        <div class="panel-head">
+          <div>
+            <p class="section-label">Contexto activo</p>
+            <h2>{{ activeVista }}</h2>
+          </div>
+          <span class="badge neutral">{{ selectedIntegration ? 'Detalle' : 'Resumen' }}</span>
+        </div>
+
+        <ng-container *ngIf="selectedIntegration as integration; else genericPanel">
+          <div class="detail-grid">
+            <div>
+              <span>Nombre</span>
+              <strong>{{ integration.nombre }}</strong>
+            </div>
+            <div>
+              <span>Tipo</span>
+              <strong>{{ integration.tipo }}</strong>
+            </div>
+            <div>
+              <span>Estado</span>
+              <strong>{{ integration.estado }}</strong>
+            </div>
+            <div>
+              <span>Rate limit</span>
+              <strong>{{ integration.rateLimit }}/min</strong>
+            </div>
+            <div>
+              <span>Latencia</span>
+              <strong>{{ integration.latencia }} ms</strong>
+            </div>
+            <div>
+              <span>Owner</span>
+              <strong>{{ integration.propietario }}</strong>
+            </div>
+          </div>
+
+          <div class="callout">
+            <strong>Endpoint</strong>
+            <p>{{ integration.endpoint }}</p>
+          </div>
+        </ng-container>
+
+        <ng-template #genericPanel>
+          <div class="summary-stack">
+            <article>
+              <strong>Estado global</strong>
+              <p>{{ integrationStats().activas }} integraciones activas y {{ integrationStats().error }} con error.</p>
+            </article>
+            <article>
+              <strong>Politicas</strong>
+              <p>{{ enabledRulesCount }} reglas habilitadas.</p>
+            </article>
+            <article>
+              <strong>Auditoria</strong>
+              <p>La bitacora mantiene los eventos mas recientes para apoyar el contexto de la guia.</p>
+            </article>
+          </div>
+        </ng-template>
+      </article>
+    </aside>
+  </section>
+</section>

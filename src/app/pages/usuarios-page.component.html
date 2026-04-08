@@ -1,0 +1,353 @@
+<section class="page usuarios-page" id="usuarios" data-guideia="usuarios-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Gobierno de accesos</p>
+      <h1>Directorio, permisos e invitaciones en un mismo workspace</h1>
+      <p>
+        Esta pantalla mezcla alta de usuario, filtros de directorio, matriz de permisos e
+        invitaciones pendientes. La guia necesita distinguir bien si el usuario quiere crear,
+        navegar o revisar.
+      </p>
+    </div>
+    <div class="stats">
+      <article>
+        <span>Total usuarios</span>
+        <strong>{{ usuarioStats().total }}</strong>
+      </article>
+      <article>
+        <span>En linea</span>
+        <strong>{{ usuarioStats().online }}</strong>
+      </article>
+      <article>
+        <span>Bloqueados</span>
+        <strong>{{ usuarioStats().bloqueados }}</strong>
+      </article>
+      <article>
+        <span>MFA activo</span>
+        <strong>{{ usuarioStats().mfaEnabled }}</strong>
+      </article>
+    </div>
+  </header>
+
+  <section class="switcher" data-guideia="usuarios-switcher">
+    <button
+      *ngFor="let vista of vistas"
+      type="button"
+      [class.active]="activeVista === vista"
+      (click)="setVista(vista)"
+      [attr.data-guideia]="'usuarios-tab-' + vista.toLowerCase()"
+    >
+      {{ vista }}
+    </button>
+  </section>
+
+  <section class="content-grid">
+    <article class="card form-card">
+      <div class="form-header">
+        <div>
+          <p class="section-label">Alta operativa</p>
+          <h2>Nuevo usuario</h2>
+        </div>
+        <button
+          type="button"
+          class="new-button"
+          (click)="createNewUsuario()"
+          data-guideia="usuario-nuevo"
+        >
+          Nuevo usuario
+        </button>
+      </div>
+
+      <form
+        class="user-form"
+        (ngSubmit)="submitUsuario()"
+        data-guideia="form-usuario"
+        data-guideia-visible="true"
+        data-guideia-mode="create"
+      >
+        <div class="form-section">
+          <h3>Identidad</h3>
+
+          <label for="usuario-nombre">Nombre</label>
+          <input
+            id="usuario-nombre"
+            type="text"
+            name="nombre"
+            [(ngModel)]="formNombre"
+            data-guideia="usuario-nombre-input"
+            placeholder="Ej. Laura Martín"
+            required
+          />
+
+          <label for="usuario-email">Email</label>
+          <input
+            id="usuario-email"
+            type="email"
+            name="email"
+            [(ngModel)]="formEmail"
+            data-guideia="usuario-email-input"
+            placeholder="Ej. laura.martin@guideia.local"
+            required
+          />
+        </div>
+
+        <div class="form-section">
+          <h3>Gobierno</h3>
+
+          <div class="field-grid">
+            <div>
+              <label for="usuario-rol">Rol</label>
+              <select
+                id="usuario-rol"
+                name="rol"
+                [(ngModel)]="formRol"
+                data-guideia="usuario-rol-select"
+              >
+                <option *ngFor="let role of roleOptions" [value]="role">{{ role }}</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="usuario-estado">Estado</label>
+              <select
+                id="usuario-estado"
+                name="estado"
+                [(ngModel)]="formEstado"
+                data-guideia="usuario-estado-select"
+              >
+                <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="usuario-equipo">Equipo</label>
+              <select
+                id="usuario-equipo"
+                name="equipo"
+                [(ngModel)]="formEquipo"
+                data-guideia="usuario-equipo-select"
+              >
+                <option *ngFor="let team of teamOptions" [value]="team">{{ team }}</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="usuario-zona">Zona</label>
+              <select
+                id="usuario-zona"
+                name="zona"
+                [(ngModel)]="formZona"
+                data-guideia="usuario-zona-select"
+              >
+                <option *ngFor="let zone of zoneOptions" [value]="zone">{{ zone }}</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="usuario-canal">Canal preferido</label>
+              <select
+                id="usuario-canal"
+                name="canal"
+                [(ngModel)]="formCanal"
+                data-guideia="usuario-canal-select"
+              >
+                <option *ngFor="let channel of channelOptions" [value]="channel">
+                  {{ channel }}
+                </option>
+              </select>
+            </div>
+
+            <label class="toggle-row" for="usuario-mfa">
+              <input
+                id="usuario-mfa"
+                type="checkbox"
+                name="mfa"
+                [(ngModel)]="formMfa"
+                data-guideia="usuario-mfa-toggle"
+              />
+              MFA habilitado
+            </label>
+          </div>
+        </div>
+
+        <div class="form-actions" data-guideia="usuario-actions">
+          <button type="submit" class="primary" data-guideia="usuario-guardar">
+            Registrar usuario
+          </button>
+        </div>
+      </form>
+    </article>
+
+    <article class="card table-card">
+      <div class="panel-head">
+        <div>
+          <p class="section-label">Directorio operativo</p>
+          <h2>Usuarios cargados</h2>
+        </div>
+        <span class="badge muted">{{ usuarios.length }} visibles</span>
+      </div>
+
+      <div class="toolbar">
+        <input
+          type="search"
+          [(ngModel)]="searchTerm"
+          placeholder="Buscar usuario, email, rol o equipo"
+          data-guideia="usuario-buscador"
+        />
+        <select [(ngModel)]="filterRole">
+          <option value="Todos">Todos los roles</option>
+          <option *ngFor="let role of roleOptions" [value]="role">{{ role }}</option>
+        </select>
+        <select [(ngModel)]="filterStatus">
+          <option value="Todos">Todos los estados</option>
+          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+        </select>
+        <select [(ngModel)]="filterTeam">
+          <option value="Todos">Todos los equipos</option>
+          <option *ngFor="let team of teamOptions" [value]="team">{{ team }}</option>
+        </select>
+      </div>
+
+      <div class="table-wrap" data-guideia="tabla-usuarios">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Usuario</th>
+              <th>Equipo</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Zona</th>
+              <th>Carga</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let usuario of usuarios; trackBy: trackByUsuarioId"
+              [class.selected]="selectedUsuario?.id === usuario.id"
+              (click)="selectUsuario(usuario)"
+              [attr.data-guideia]="'fila-usuario-' + usuario.id"
+            >
+              <td>#{{ usuario.id }}</td>
+              <td>
+                <strong>{{ usuario.nombre }}</strong>
+                <small>{{ usuario.email }}</small>
+              </td>
+              <td>{{ usuario.equipo }}</td>
+              <td>
+                <select [value]="usuario.rol" (change)="changeRol(usuario.id, $event)">
+                  <option *ngFor="let role of roleOptions" [value]="role">{{ role }}</option>
+                </select>
+              </td>
+              <td>
+                <span class="badge" [attr.data-estado]="usuario.estado">{{ usuario.estado }}</span>
+              </td>
+              <td>{{ usuario.zona }}</td>
+              <td>
+                <div class="mini-progress">
+                  <span class="mini-progress-bar" [style.width.%]="usuario.carga"></span>
+                </div>
+                <small>{{ usuario.carga }}%</small>
+              </td>
+              <td (click)="$event.stopPropagation()">
+                <button type="button" (click)="cycleEstado(usuario.id)">Cambiar estado</button>
+              </td>
+            </tr>
+            <tr *ngIf="usuarios.length === 0">
+              <td colspan="8">No hay usuarios que coincidan con los filtros.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <aside class="card side-card" data-guideia="usuarios-side-panel">
+      <ng-container [ngSwitch]="activeVista">
+        <section *ngSwitchCase="'Directorio'" class="side-section">
+          <p class="section-label">Ficha activa</p>
+          <h2>{{ selectedUsuario?.nombre || 'Sin seleccion' }}</h2>
+          <p class="muted">
+            {{ selectedUsuario?.equipo || 'Selecciona un usuario para ver detalle' }} ·
+            {{ selectedUsuario?.zona || 'Sin zona' }}
+          </p>
+
+          <div class="detail-grid" *ngIf="selectedUsuario as usuario">
+            <article>
+              <span>Canal</span>
+              <strong>{{ usuario.canalPreferido }}</strong>
+            </article>
+            <article>
+              <span>MFA</span>
+              <strong>{{ usuario.mfa ? 'Activo' : 'Pendiente' }}</strong>
+            </article>
+            <article>
+              <span>Tickets</span>
+              <strong>{{ usuario.ticketsAbiertos }}</strong>
+            </article>
+            <article>
+              <span>Ultimo acceso</span>
+              <strong>{{ usuario.ultimoAcceso }}</strong>
+            </article>
+          </div>
+        </section>
+
+        <section *ngSwitchCase="'Permisos'" class="side-section" data-guideia="usuarios-permisos-panel">
+          <p class="section-label">Matriz de permisos</p>
+          <h2>Acceso por rol</h2>
+          <div class="permission-grid">
+            <article *ngFor="let row of permissionMatrix">
+              <strong>{{ row.modulo }}</strong>
+              <p>Admin: {{ row.admin }}</p>
+              <p>Editor: {{ row.editor }}</p>
+              <p>Viewer: {{ row.viewer }}</p>
+            </article>
+          </div>
+        </section>
+
+        <section *ngSwitchCase="'Invitaciones'" class="side-section" data-guideia="usuarios-invitaciones-panel">
+          <p class="section-label">Invitaciones</p>
+          <h2>Cola de onboarding</h2>
+
+          <form class="invite-form" (ngSubmit)="submitInvitation()" data-guideia="usuario-invitacion-form">
+            <input
+              [(ngModel)]="inviteNombre"
+              name="inviteNombre"
+              placeholder="Nombre"
+              data-guideia="usuario-invitacion-nombre-input"
+            />
+            <input
+              [(ngModel)]="inviteEmail"
+              name="inviteEmail"
+              placeholder="Email"
+              data-guideia="usuario-invitacion-email-input"
+            />
+            <select
+              [(ngModel)]="inviteRol"
+              name="inviteRol"
+              data-guideia="usuario-invitacion-rol-select"
+            >
+              <option *ngFor="let role of roleOptions" [value]="role">{{ role }}</option>
+            </select>
+            <select
+              [(ngModel)]="inviteEquipo"
+              name="inviteEquipo"
+              data-guideia="usuario-invitacion-equipo-select"
+            >
+              <option *ngFor="let team of teamOptions" [value]="team">{{ team }}</option>
+            </select>
+            <button type="submit" data-guideia="usuario-invitacion-guardar">Lanzar invitacion</button>
+          </form>
+
+          <div class="invite-stack" data-guideia="usuario-invitacion-stack">
+            <article *ngFor="let item of invitaciones">
+              <strong>{{ item.nombre }}</strong>
+              <p>{{ item.email }}</p>
+              <small>{{ item.rol }} · {{ item.equipo }} · {{ item.estado }}</small>
+            </article>
+          </div>
+        </section>
+      </ng-container>
+    </aside>
+  </section>
+</section>

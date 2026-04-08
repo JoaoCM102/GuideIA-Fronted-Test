@@ -1,0 +1,186 @@
+<section class="page dashboard" id="dashboard" data-guideia="dashboard-page">
+  <header class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Centro de mando operativo</p>
+      <h1>Panel de orquestacion con colas, riesgo y capacidad de equipo</h1>
+      <p class="hero-text">
+        Vista compuesta para movernos entre registros, usuarios, reportes e incidencias sin salir
+        del backoffice. La idea es que la guia tenga varios caminos posibles y aun asi sepa escoger
+        uno coherente.
+      </p>
+    </div>
+
+    <div class="command-grid" data-guideia="dashboard-command-grid">
+      <a
+        *ngFor="let item of quickLinks"
+        [routerLink]="item.route"
+        class="command-card"
+        [attr.data-guideia]="item.selector"
+      >
+        <strong>{{ item.label }}</strong>
+        <span>{{ item.caption }}</span>
+      </a>
+    </div>
+  </header>
+
+  <section class="kpi-grid">
+    <article *ngFor="let card of cards()" class="kpi-card" [attr.data-tone]="card.tone">
+      <span>{{ card.label }}</span>
+      <strong>{{ card.value }}</strong>
+      <small>{{ card.trend }}</small>
+    </article>
+  </section>
+
+  <section class="dashboard-layout">
+    <article class="panel approvals-panel" data-guideia="dashboard-approvals">
+      <div class="panel-head">
+        <div>
+          <p class="section-label">Cola de aprobaciones</p>
+          <h2>Bloqueos que condicionan el flujo</h2>
+        </div>
+        <span class="badge muted">{{ approvals().length }} activas</span>
+      </div>
+
+      <div class="approval-stack">
+        <div class="approval-card" *ngFor="let item of approvals(); trackBy: trackByApprovalId">
+          <div class="approval-meta">
+            <span class="pill">{{ item.tipo }}</span>
+            <span class="date">{{ item.fechaObjetivo }}</span>
+          </div>
+          <strong>{{ item.titulo }}</strong>
+          <p>{{ item.responsable }}</p>
+          <div class="approval-actions">
+            <button type="button" class="approve" (click)="approve(item)">Aprobar</button>
+            <button type="button" class="escalate" (click)="escalate(item)">Escalar</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel radar-panel" data-guideia="dashboard-radar-reportes">
+      <div class="panel-head">
+        <div>
+          <p class="section-label">Radar de reportes</p>
+          <h2>Seguimiento por owner team</h2>
+        </div>
+        <a routerLink="/reportes">Ir al modulo</a>
+      </div>
+
+      <div class="radar-grid">
+        <article class="radar-card" *ngFor="let reporte of reportRadar()">
+          <div class="radar-top">
+            <span class="pill" [attr.data-risk]="reporte.riesgo">{{ reporte.riesgo }}</span>
+            <span>{{ reporte.ownerTeam }}</span>
+          </div>
+          <strong>{{ reporte.nombre }}</strong>
+          <div class="progress">
+            <span class="progress-bar" [style.width.%]="reporte.progreso"></span>
+          </div>
+          <div class="radar-bottom">
+            <small>{{ reporte.progreso }}%</small>
+            <small>{{ reporte.alertas }} alertas</small>
+          </div>
+        </article>
+      </div>
+    </article>
+
+    <article class="panel table-panel" data-guideia="dashboard-registros-recientes">
+      <div class="panel-head">
+        <div>
+          <p class="section-label">Registros recientes</p>
+          <h2>Work queue priorizada</h2>
+        </div>
+        <a routerLink="/registros">Abrir modulo</a>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Codigo</th>
+            <th>Nombre</th>
+            <th>Estado</th>
+            <th>Canal</th>
+            <th>SLA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let registro of topRegistros()">
+            <td>{{ registro.codigo }}</td>
+            <td>{{ registro.nombre }}</td>
+            <td>{{ registro.estado }}</td>
+            <td>{{ registro.canal }}</td>
+            <td>{{ registro.sla }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="panel incidents-panel" data-guideia="dashboard-incidents">
+      <div class="panel-head">
+        <div>
+          <p class="section-label">Incidencias</p>
+          <h2>Superficie de riesgo viva</h2>
+        </div>
+        <span class="badge critical">{{ incidents().length }} items</span>
+      </div>
+
+      <div class="incident-list">
+        <div class="incident-row" *ngFor="let item of incidents(); trackBy: trackByIncidentId">
+          <div>
+            <strong>{{ item.servicio }}</strong>
+            <p>{{ item.entorno }} · {{ item.owner }}</p>
+          </div>
+          <div class="incident-meta">
+            <span class="pill" [attr.data-risk]="item.impacto">{{ item.impacto }}</span>
+            <button type="button" (click)="cycleIncident(item)">{{ item.estado }}</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel team-panel" data-guideia="dashboard-team-load">
+      <div class="panel-head">
+        <div>
+          <p class="section-label">Carga por persona</p>
+          <h2>Quien esta mas tensionado</h2>
+        </div>
+        <a routerLink="/usuarios">Ver usuarios</a>
+      </div>
+
+      <div class="team-load">
+        <div class="team-row" *ngFor="let usuario of teamLoad()">
+          <div>
+            <strong>{{ usuario.nombre }}</strong>
+            <p>{{ usuario.equipo }} · {{ usuario.zona }}</p>
+          </div>
+          <div class="load-gauge">
+            <span class="progress compact">
+              <span class="progress-bar" [style.width.%]="usuario.carga"></span>
+            </span>
+            <small>{{ usuario.carga }}%</small>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel activity-panel" data-guideia="dashboard-activity">
+      <div class="panel-head">
+        <div>
+          <p class="section-label">Trazabilidad</p>
+          <h2>Actividad cruzada de todos los modulos</h2>
+        </div>
+        <a routerLink="/ajustes">Bitacora completa</a>
+      </div>
+
+      <ul class="activity-list">
+        <li *ngFor="let item of activity()">
+          <span class="activity-time">{{ item.fecha }}</span>
+          <div class="activity-copy">
+            <strong>{{ item.accion }}</strong>
+            <small>{{ item.modulo }} · {{ item.actor }}</small>
+          </div>
+        </li>
+      </ul>
+    </article>
+  </section>
+</section>
